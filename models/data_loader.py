@@ -7,7 +7,6 @@ import librosa.display, librosa
 import numpy as np
 import scipy.signal
 import soundfile as sf
-#import sox
 import torch
 import csv
 from .spec_augment import spec_augment
@@ -125,6 +124,7 @@ class SpectrogramParser(AudioParser):
         
         spec = librosa.stft(signal, n_fft=2048, hop_length=200, win_length=800, window='hann')
         
+        spec = np.abs(spec)
         spec = torch.from_numpy(spec)
         spec = spec.unsqueeze(0)
 
@@ -225,7 +225,7 @@ def _collate_fn(batch):
         tts_seq_length = tts_tensor.size(0)
 
         seqs[x].narrow(0, 0, seq_length).copy_(tensor)
-        tts_seqs[x].narrow(0, 0, tts_seq_length).copy_(tts_tensor)
+        tts_seqs[x].narrow(0, 0, tts_seq_length).copy_(tts_tensor) # 여기 바꿔야함
         
         targets[x].narrow(0, 0, len(target)).copy_(torch.LongTensor(target))
 
