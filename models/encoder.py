@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from 
+
 
 #convolution rnn은 추후에 추가할 예정
 class Encoder(nn.Module):
