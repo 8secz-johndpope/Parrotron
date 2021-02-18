@@ -1,0 +1,3 @@
+./label,csv/Parrotron.yaml
+
+학습 시작

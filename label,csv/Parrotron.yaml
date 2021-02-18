@@ -1,0 +1,61 @@
+data:
+  train_path: "/home/jhjeong/jiho_deep/two_pass/label,csv/AI_hub_all_U_800_T_50.csv"
+  val_path: "/home/jhjeong/jiho_deep/two_pass/label,csv/AI_hub_val_U_800_T_50.csv"
+  seed: 123456
+  num_workers: 16
+  batch_size: 12
+  
+
+audio_data:
+  type: "log"
+  sampling_rate: 16000
+  window_size: 500
+  window_stride: 12.5
+  window: 'hamming'
+
+model:
+  enc:
+    type: lstm
+    input_size: 80
+    hidden_size: 1024
+    output_size: 320
+    n_layers: 6
+    bidirectional: False
+
+  rnn_t_dec:
+    type: lstm
+    embedding_size: 128
+    hidden_size: 1024
+    output_size: 320
+    n_layers: 2
+
+  las_dec:
+    type: lstm
+    max_length: 55
+    attention_head: 4
+    hidden_size: 1024
+    n_layers: 2
+    embedding_size: 96
+    projection_dim: 320
+   
+  joint:
+    inner_dim: 320
+  
+  vocab_size: 1907
+  dropout: 0.3
+
+training:
+  begin_epoch: 0
+  end_epoch: 10000
+
+inference:
+  beam_search: False
+
+optim:
+  type: "Adam"
+  lr: 0.0001
+  weight_decay: 0.01
+  milestones: [7, 14]
+  las_milestones: [20, 25]
+  decay_rate: 0.3333
+

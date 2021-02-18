@@ -1,0 +1,72 @@
+./label,csv/Parrotron.yaml
+
+학습 시작
+
+Epoch 1 (Train) ASR_Loss 1.8352 Spec_Loss 202.9668 WER 105.7435 time 1336.4144
+Epoch 1 (Eval) ASR_Loss 1.5628 Spec_Loss 58.0857 WER 105.8411 time 75.3291
+
+Epoch 2 (Train) ASR_Loss 1.4520 Spec_Loss 87.4425 WER 102.2369 time 1334.2380
+Epoch 2 (Eval) ASR_Loss 1.4167 Spec_Loss 37.8292 WER 102.9269 time 74.6517
+
+Epoch 3 (Train) ASR_Loss 1.3420 Spec_Loss 60.1784 WER 100.0822 time 1327.2146
+Epoch 3 (Eval) ASR_Loss 1.3544 Spec_Loss 31.9590 WER 104.9097 time 75.7305
+
+Epoch 4 (Train) ASR_Loss 1.2784 Spec_Loss 49.0001 WER 99.7865 time 1330.8993
+Epoch 4 (Eval) ASR_Loss 1.3142 Spec_Loss 30.8396 WER 120.2361 time 76.0845
+
+Epoch 5 (Train) ASR_Loss 1.2357 Spec_Loss 43.3512 WER 99.5002 time 1329.6243
+Epoch 5 (Eval) ASR_Loss 1.2915 Spec_Loss 29.3612 WER 104.2551 time 75.5588
+
+Epoch 6 (Train) ASR_Loss 1.2035 Spec_Loss 39.8279 WER 100.4647 time 1326.8985
+Epoch 6 (Eval) ASR_Loss 1.2802 Spec_Loss 31.1980 WER 112.5207 time 74.2322
+
+Epoch 7 (Train) ASR_Loss 1.1764 Spec_Loss 37.6590 WER 99.4067 time 1320.1331
+Epoch 7 (Eval) ASR_Loss 1.2691 Spec_Loss 28.2536 WER 111.3038 time 75.8784
+
+Epoch 8 (Train) ASR_Loss 1.1535 Spec_Loss 35.9249 WER 99.4524 time 1326.3862
+Epoch 8 (Eval) ASR_Loss 1.2627 Spec_Loss 29.2525 WER 111.2662 time 76.5365
+
+Epoch 9 (Train) ASR_Loss 1.1326 Spec_Loss 34.6932 WER 99.1699 time 1329.0790
+Epoch 9 (Eval) ASR_Loss 1.2660 Spec_Loss 26.9612 WER 115.4877 time 76.4040
+
+Epoch 10 (Train) ASR_Loss 1.1121 Spec_Loss 33.6884 WER 99.1554 time 1323.3465
+Epoch 10 (Eval) ASR_Loss 1.2630 Spec_Loss 29.0604 WER 113.8815 time 75.9311
+
+Epoch 11 (Train) ASR_Loss 1.0933 Spec_Loss 32.7035 WER 100.6712 time 1329.2021
+Epoch 11 (Eval) ASR_Loss 1.2659 Spec_Loss 28.4605 WER 116.7681 time 75.4408
+
+Epoch 12 (Train) ASR_Loss 1.0748 Spec_Loss 32.0554 WER 100.1079 time 1327.7024
+Epoch 12 (Eval) ASR_Loss 1.2785 Spec_Loss 29.2989 WER 123.1945 time 76.7500
+
+Epoch 13 (Train) ASR_Loss 1.0574 Spec_Loss 31.4804 WER 101.2068 time 1336.0977
+Epoch 13 (Eval) ASR_Loss 1.2769 Spec_Loss 27.7029 WER 137.2764 time 76.7612
+
+Epoch 14 (Train) ASR_Loss 1.0398 Spec_Loss 30.9496 WER 101.1066 time 1336.8404
+Epoch 14 (Eval) ASR_Loss 1.2978 Spec_Loss 24.9552 WER 137.4660 time 77.5763
+
+Epoch 15 (Train) ASR_Loss 1.0228 Spec_Loss 30.4152 WER 102.3834 time 1338.7244
+Epoch 15 (Eval) ASR_Loss 1.3090 Spec_Loss 28.5557 WER 154.8746 time 78.1563
+
+Epoch 16 (Train) ASR_Loss 1.0059 Spec_Loss 30.0398 WER 103.2591 time 1341.7045
+Epoch 16 (Eval) ASR_Loss 1.3138 Spec_Loss 28.8861 WER 143.4227 time 76.6351
+
+Epoch 17 (Train) ASR_Loss 0.9897 Spec_Loss 29.6745 WER 101.9529 time 1334.8087
+Epoch 17 (Eval) ASR_Loss 1.3288 Spec_Loss 29.1211 WER 156.2189 time 74.1970
+
+Epoch 18 (Train) ASR_Loss 0.9736 Spec_Loss 29.2974 WER 102.7595 time 1332.0930
+Epoch 18 (Eval) ASR_Loss 1.3381 Spec_Loss 29.1655 WER 163.4242 time 74.4426
+
+Epoch 19 (Train) ASR_Loss 0.9579 Spec_Loss 28.9856 WER 101.9823 time 1339.1373
+Epoch 19 (Eval) ASR_Loss 1.3488 Spec_Loss 30.2101 WER 151.2290 time 77.5344
+
+Epoch 20 (Train) ASR_Loss 0.9420 Spec_Loss 28.6562 WER 100.9441 time 1339.5280
+Epoch 20 (Eval) ASR_Loss 1.3774 Spec_Loss 29.5590 WER 170.8729 time 79.2835
+
+Epoch 21 (Train) ASR_Loss 0.9284 Spec_Loss 28.6303 WER 100.1601 time 1340.7235
+Epoch 21 (Eval) ASR_Loss 1.3873 Spec_Loss 30.0348 WER 140.5962 time 78.2696
+
+Epoch 22 (Train) ASR_Loss 0.9139 Spec_Loss 28.2420 WER 97.7844 time 1337.7214
+Epoch 22 (Eval) ASR_Loss 1.4131 Spec_Loss 28.4131 WER 147.3132 time 76.3765
+
+Epoch 23 (Train) ASR_Loss 0.8983 Spec_Loss 27.9623 WER 97.1604 time 1337.7810
+Epoch 23 (Eval) ASR_Loss 1.4237 Spec_Loss 27.7117 WER 146.6834 time 74.9856
