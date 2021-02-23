@@ -58,26 +58,22 @@ class Encoder(nn.Module):
         )
         
         self.projection_1 = nn.Sequential(
-            nn.Linear(in_features=512, out_features=512, bias=True),
+            nn.Linear(in_features=rnn_hidden_size * 2 if bidirectional else rnn_hidden_size, out_features=rnn_hidden_size * 2, bias=True),
             nn.ReLU()
         )
 
         self.projection_2 = nn.Sequential(
-            nn.Linear(in_features=512, out_features=512, bias=True),
+            nn.Linear(in_features=rnn_hidden_size * 2 if bidirectional else rnn_hidden_size, out_features=rnn_hidden_size * 2, bias=True),
             nn.ReLU()
         )
         self.projection_3 = nn.Sequential(
-            nn.Linear(in_features=512, out_features=512, bias=True),
+            nn.Linear(in_features=rnn_hidden_size * 2 if bidirectional else rnn_hidden_size, out_features=rnn_hidden_size * 2, bias=True),
             nn.ReLU()
         )
         
-        self.batchnorm_1 = nn.BatchNorm1d(512)
-        self.batchnorm_2 = nn.BatchNorm1d(512)
-        self.batchnorm_3 = nn.BatchNorm1d(512)
-
-    def flatten_parameters(self):
-        self.lstm_1.flatten_parameters()
-        self.lstm_2.flatten_parameters()
+        self.batchnorm_1 = nn.BatchNorm1d(rnn_hidden_size * 2)
+        self.batchnorm_2 = nn.BatchNorm1d(rnn_hidden_size * 2)
+        self.batchnorm_3 = nn.BatchNorm1d(rnn_hidden_size * 2)
 
     def forward(self, x):
         '''
@@ -102,6 +98,7 @@ class Encoder(nn.Module):
 
         #first layer
         x, _ = self.lstm_1(x)
+
         x = self.projection_1(x)
         x = x.transpose(1, 2).contiguous() # [batch, feature, seq_len] 
         x = self.batchnorm_1(x)

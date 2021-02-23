@@ -119,7 +119,6 @@ class SpectrogramParser(AudioParser):
             frame_rate = wave_file.getframerate()
             print(frame_rate)
         '''
-        
         signal, _ = librosa.load(audio_path, self.sample_rate)
         
         spec = librosa.stft(signal, n_fft=2048, hop_length=200, win_length=800, window='hann')

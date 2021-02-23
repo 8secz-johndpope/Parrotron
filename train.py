@@ -95,7 +95,7 @@ def train(model, train_loader, optimizer, spec_criterion, asr_criterion, device)
     total_cer = 0
     total_wer = 0
     
-    total_wer_len = 0
+    total_wer_len = 0.00000001
     total_cer_len = 0
 
     start_time = time.time()
@@ -111,38 +111,41 @@ def train(model, train_loader, optimizer, spec_criterion, asr_criterion, device)
 
         mel_outputs_postnet, txt_outputs = model(seqs, tts_seqs, targets)
 
-        loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))
+        #loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))
+        
         loss_2 = spec_criterion(mel_outputs_postnet, tts_seqs)
-
-        loss = loss_1 + loss_2
-        total_asr_loss += loss_1.item()
+        
+        #loss = loss_1 + loss_2
+        loss = loss_2
+        #total_asr_loss += loss_1.item()
         total_spec_loss += loss_2.item()
         
         loss.backward()
         optimizer.step()
-
+        '''
         hypothesis = txt_outputs.max(-1)[1]
         wer, _, wer_len, _ = compute_cer(hypothesis.cpu().numpy(),targets.cpu().numpy()) 
 
         total_wer += wer
         total_wer_len += wer_len
         
-        #print("ang~~!!!")
-        #wav = wow(mel_outputs_postnet.transpose(1,2).cpu())
-        #torchaudio.save("test.wav", wav[0], 16000)
-        #print(wav.shape)
-
         if i % 100 == 0:
             print('{} train_batch: {:4d}/{:4d}, train_asr_loss: {:.4f}, train_spec_loss: {:.4f}, train_wer: {:.2f}, train_time: {:.2f}'
                   .format(datetime.datetime.now(), i, total_batch_num, loss_1.item(), loss_2.item(), (wer/wer_len)*100, time.time() - start_time))
             start_time = time.time()
-    
+        '''
+        if i % 100 == 0:
+            print('{} train_batch: {:4d}/{:4d}, train_spec_loss: {:.4f},  train_time: {:.2f}'
+                  .format(datetime.datetime.now(), i, total_batch_num, loss_2.item(),  time.time() - start_time))
+            start_time = time.time()
+        
     train_asr_loss = total_asr_loss / total_batch_num
     train_spec_loss = total_spec_loss / total_batch_num
 
     final_wer = (total_wer / total_wer_len) * 100
 
     return train_asr_loss, train_spec_loss, final_wer
+    #return train_spec_loss
 
 def evaluation(model, val_loader, spec_criterion, asr_criterion, device):
     model.eval()
@@ -154,7 +157,7 @@ def evaluation(model, val_loader, spec_criterion, asr_criterion, device):
     total_cer = 0
     total_wer = 0
     
-    total_wer_len = 0
+    total_wer_len = 0.000001
     total_cer_len = 0
 
     start_time = time.time()
@@ -168,21 +171,26 @@ def evaluation(model, val_loader, spec_criterion, asr_criterion, device):
             targets = targets.to(device)
             tts_seqs = tts_seqs.to(device)
 
+            model.module.flatten_parameters()
             mel_outputs_postnet, txt_outputs = model(seqs, tts_seqs, targets)
-
-            loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))
+ 
+            #loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))
             loss_2 = spec_criterion(mel_outputs_postnet, tts_seqs)
-
+            loss = loss_2
+            '''
             loss = loss_1 + loss_2
             total_asr_loss += loss_1.item()
+            '''
             total_spec_loss += loss_2.item()
             
+            '''
             hypothesis = txt_outputs.max(-1)[1]
             wer, _, wer_len, _ = compute_cer(hypothesis.cpu().numpy(), targets.cpu().numpy()) 
-
+            
             total_wer += wer
             total_wer_len += wer_len
-            
+            '''
+
     eval_asr_loss = total_asr_loss / total_batch_num
     eval_spec_loss = total_spec_loss / total_batch_num
 
@@ -227,15 +235,13 @@ def main():
                         window=WINDOW)
 
     hop_length = int(round(SAMPLE_RATE * 0.001 * WINDOW_STRIDE))
- 
-    #wow = torchaudio.transforms.GriffinLim(n_fft=2048, win_length=WINDOW_SIZE, hop_length=hop_length)
 
     #-------------------------- Model Initialize --------------------------
     #Prediction Network
     enc = Encoder(rnn_hidden_size=256,
-                      n_layers=5, 
-                      dropout=0.5, 
-                      bidirectional=True)
+                  n_layers=5, 
+                  dropout=0.5, 
+                  bidirectional=True)
 
     dec = Decoder(target_dim=1025,
                   pre_net_dim=256,
@@ -245,7 +251,7 @@ def main():
                   n_layers=2, 
                   dropout=0.5, 
                   attention_type="DotProduct")
-
+    
     asr_dec = ASR_Decoder(label_dim=31, 
                           Embedding_dim=64,
                           rnn_hidden_size=512, 
@@ -256,19 +262,13 @@ def main():
                           pad_id=PAD_token)
     
     model = Parrotron(enc, dec, asr_dec).to(device)
-
     #model.load_state_dict(torch.load("/home/jhjeong/jiho_deep/Parrotron/plz_load/parrotron.pth"))
     
-    model = nn.DataParallel(model).to(device)
-    '''
-    las_model = ListenAttendSpell(enc, las_dec, "False").to(device)
-    
-    las_model = nn.DataParallel(las_model).to(device)
-    '''
+    model = nn.DataParallel(model)
     #-------------------------- Loss Initialize --------------------------
 
-    asr_criterion = nn.CrossEntropyLoss(ignore_index=0).to(device)
-    spec_criterion = nn.MSELoss().to(device)
+    asr_criterion = nn.CrossEntropyLoss(ignore_index=0)
+    spec_criterion = nn.MSELoss()
     
     #-------------------- Model Pararllel & Optimizer --------------------
         
@@ -281,7 +281,7 @@ def main():
     #-------------------------- Data load --------------------------
     #train dataset
     train_dataset = SpectrogramDataset(audio_conf, 
-                                       "/home/jhjeong/jiho_deep/Parrotron/label,csv/train.csv",
+                                       "/home/jhjeong/jiho_deep/Parrotron/wowwow.csv",
                                        feature_type=config.audio_data.type, 
                                        normalize=True, 
                                        spec_augment=True)
@@ -289,12 +289,12 @@ def main():
     train_loader = AudioDataLoader(dataset=train_dataset,
                                     shuffle=True,
                                     num_workers=config.data.num_workers,
-                                    batch_size=48,
+                                    batch_size=8,
                                     drop_last=True)
     
     #val dataset
     val_dataset = SpectrogramDataset(audio_conf, 
-                                     "/home/jhjeong/jiho_deep/Parrotron/label,csv/test.csv", 
+                                     "/home/jhjeong/jiho_deep/Parrotron/wowwow1.csv", 
                                      feature_type=config.audio_data.type,
                                      normalize=True,
                                      spec_augment=False)
@@ -302,7 +302,7 @@ def main():
     val_loader = AudioDataLoader(dataset=val_dataset,
                                  shuffle=True,
                                  num_workers=config.data.num_workers,
-                                 batch_size=48,
+                                 batch_size=8,
                                  drop_last=True)
     
     print(" ")
@@ -330,13 +330,12 @@ def main():
             f.write('\n')
             f.write('Epoch %d (Eval) ASR_Loss %0.4f Spec_Loss %0.4f WER %0.4f time %0.4f' % (epoch+1, eval_asr_loss, eval_spec_loss, test_wer, eval_total_time))
             f.write('\n')
-            
-        '''
-        if pre_test_loss > val_loss:
+        
+        if pre_test_loss > eval_spec_loss:
             print("best model을 저장하였습니다.")
-            torch.save(las_model.module.state_dict(), "./plz_load/only_las_model1.pth")
-            pre_test_loss = val_loss
-        '''
+            torch.save(model.module.state_dict(), "./plz_load/best_parrotron.pth")
+            pre_test_loss = eval_spec_loss
+        
         print("model을 저장하였습니다.")
         torch.save(model.module.state_dict(), "./plz_load/parrotron.pth")
         #torch.save(las_dec.state_dict(), "./model_save/second_last_las_dec_save_no_blank_end3.pth")

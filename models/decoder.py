@@ -1,7 +1,10 @@
+import os
 import torch
+import matplotlib
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.nn import functional as F
+import random
 
 class Prenet(nn.Module):
     def __init__(self, in_dim, out_dim, drop_out_p):
@@ -105,7 +108,6 @@ class DotProductAttention(nn.Module):
 
         return context, attn
 
-
 class LocationLayer(nn.Module):
     def __init__(self, attention_n_filters, attention_kernel_size,
                  attention_dim):
@@ -182,34 +184,25 @@ class Attention(nn.Module):
 
         return attention_context, attention_weights
 
-
 class Decoder(nn.Module):
     def __init__(self, target_dim, pre_net_dim, rnn_hidden_size, second_rnn_hidden_size, postnet_hidden_size, n_layers, dropout, attention_type):
         super(Decoder, self).__init__()
 
         self.pre_net = Prenet(target_dim, pre_net_dim, dropout)
-
         self.attention_layer = DotProductAttention()
-
-        '''
-        self.attention_layer = Attention(
-            hparams.attention_rnn_dim, hparams.encoder_embedding_dim,
-            hparams.attention_dim, hparams.attention_location_n_filters,
-            hparams.attention_location_kernel_size)
-        '''
-
-        self.projection_layer = nn.Linear(1024, target_dim, False)
+        self.rnn_hidden_size = rnn_hidden_size
+        self.projection_layer = nn.Linear(rnn_hidden_size*2, target_dim, False)
 
         self.attention_rnn = nn.LSTM(
-            input_size=pre_net_dim+512,
-            hidden_size=1024,
+            input_size=pre_net_dim+rnn_hidden_size,
+            hidden_size=rnn_hidden_size,
             num_layers=2,
             batch_first=True,
             dropout=0
         )
 
         self.rnn_projection = nn.Sequential(
-            nn.Linear(in_features=1024, out_features=512, bias=True),
+            nn.Linear(in_features=rnn_hidden_size, out_features=rnn_hidden_size, bias=True),
             nn.ReLU()
         )
 
@@ -219,54 +212,44 @@ class Decoder(nn.Module):
         '''
         output : (mel_output, new attention context vector)
         '''
+        attention_context = attention_context.squeeze(1)
         
-        attention_context = attention_context.squeeze()
         cell_input_1 = torch.cat((decoder_input, attention_context), -1) # pre-net and attention context vector concatenated
         cell_input_1 = cell_input_1.unsqueeze(1)
-
         decoder_input, _ = self.attention_rnn(cell_input_1) # (batch, seq_len, rnn_hidden_size) # passed through a stack of 2 unidirectional         
-        attention_context = attention_context.unsqueeze(1)
-
-        decoder_input = self.rnn_projection(decoder_input)
-        context, attn = self.attention_layer(decoder_input, encoder_inputs, encoder_inputs) 
-
-        attention_context = context 
-
-        cell_input_2 = torch.cat((decoder_input, attention_context), -1) # concatenation of the LSTM output and attention context vector
-        decoder_output = self.projection_layer(cell_input_2) # projected through a linear transform
         
-        return decoder_output, context
+        
+        context, attn = self.attention_layer(decoder_input, encoder_inputs, encoder_inputs) 
+        cell_input_2 = torch.cat((decoder_input, context), -1) # concatenation of the LSTM output and attention context vector
 
-    
+        decoder_output = self.projection_layer(cell_input_2) # projected through a linear transform
+       
+        return decoder_output, context
+   
     def forward(self, encoder_inputs, decoder_inputs):
         '''
         encoder_inputs = [batch, seq_len, feature] 
         decoder_inputs = [batch, feature, seq_len] ex) torch.Size([2, 440, 1025])
         '''
-
-        #print(decoder_inputs.shape)
-        batch_size, _, _ = decoder_inputs.size()
+        batch_size, max_len, _ = decoder_inputs.size()
         
         go_frame = torch.zeros(decoder_inputs.shape[0], 1, decoder_inputs.shape[2])
-
+            
         if encoder_inputs.is_cuda: go_frame = go_frame.cuda()
-        
+             
         decoder_inputs = torch.cat((go_frame, decoder_inputs), dim=1)
         decoder_inputs = self.pre_net(decoder_inputs) # B, T, F (prenet output)
+        decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
 
         mel_outputs, gate_outputs, alignments = [], [], []
 
-        decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
-
-        attention_context = torch.zeros(batch_size, 512)
+        attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
         if encoder_inputs.is_cuda: attention_context = attention_context.cuda()
-        
+
         while len(mel_outputs) < decoder_inputs.size(0) - 1:
             decoder_input = decoder_inputs[len(mel_outputs)]
- 
-            mel_output, new_attention_context = self.forward_step(encoder_inputs, decoder_input, attention_context)
-            
-            attention_context = new_attention_context
+
+            mel_output, attention_context = self.forward_step(encoder_inputs, decoder_input, attention_context)
             mel_outputs += [mel_output.squeeze(1)]
 
         mel_outputs = torch.stack(mel_outputs).transpose(0, 1).contiguous()
@@ -275,6 +258,41 @@ class Decoder(nn.Module):
         final_mel_outputs = mel_outputs + mel_outputs_postnet.transpose(1, 2)
         
         return final_mel_outputs
+
+    def inference(self, encoder_inputs, decoder_inputs):
+        if decoder_inputs == None:
+            pass
+
+        else:
+            batch_size, max_len, _ = decoder_inputs.size()
+            
+            go_frame = torch.zeros(decoder_inputs.shape[0], 1, decoder_inputs.shape[2])
+                
+            if encoder_inputs.is_cuda: go_frame = go_frame.cuda()
+
+            mel_outputs, gate_outputs, alignments = [], [], []
+
+            decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
+            
+            attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
+            if encoder_inputs.is_cuda: attention_context = attention_context.cuda()
+            
+            decoder_input = go_frame
+            while len(mel_outputs) < max_len - 1:
+                decoder_input = self.pre_net(decoder_input) # B, T, F (prenet output) 
+                decoder_input = decoder_input.squeeze(0)
+                
+                mel_output, attention_context = self.forward_step(encoder_inputs, decoder_input, attention_context)                
+                decoder_input = mel_output
+
+                mel_outputs += [mel_output.squeeze(1)]
+
+        mel_outputs = torch.stack(mel_outputs).transpose(0, 1).contiguous()
+        
+        mel_outputs_postnet = self.postnet(mel_outputs)
+        final_mel_outputs = mel_outputs + mel_outputs_postnet.transpose(1, 2)
+
+        return final_mel_outputs    
 
 if __name__ == '__main__':
     # dec test 
