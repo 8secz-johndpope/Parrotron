@@ -111,17 +111,12 @@ def train(model, train_loader, optimizer, spec_criterion, asr_criterion, device)
 
         mel_outputs_postnet, txt_outputs = model(seqs, tts_seqs, targets)
 
-        #loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))
-        
-        loss_2 = spec_criterion(mel_outputs_postnet, tts_seqs)
-        
-        #loss = loss_1 + loss_2
-        loss = loss_2
-        #total_asr_loss += loss_1.item()
-        total_spec_loss += loss_2.item()
+        loss = spec_criterion(mel_outputs_postnet, tts_seqs)
+        total_spec_loss += loss.item()
         
         loss.backward()
         optimizer.step()
+
         '''
         hypothesis = txt_outputs.max(-1)[1]
         wer, _, wer_len, _ = compute_cer(hypothesis.cpu().numpy(),targets.cpu().numpy()) 
@@ -136,7 +131,7 @@ def train(model, train_loader, optimizer, spec_criterion, asr_criterion, device)
         '''
         if i % 100 == 0:
             print('{} train_batch: {:4d}/{:4d}, train_spec_loss: {:.4f},  train_time: {:.2f}'
-                  .format(datetime.datetime.now(), i, total_batch_num, loss_2.item(),  time.time() - start_time))
+                  .format(datetime.datetime.now(), i, total_batch_num, loss.item(),  time.time() - start_time))
             start_time = time.time()
         
     train_asr_loss = total_asr_loss / total_batch_num
@@ -250,7 +245,7 @@ def main():
                   postnet_hidden_size=512, 
                   n_layers=2, 
                   dropout=0.5, 
-                  attention_type="DotProduct")
+                  attention_type="LocationSensitive")
     
     asr_dec = ASR_Decoder(label_dim=31, 
                           Embedding_dim=64,
@@ -281,7 +276,7 @@ def main():
     #-------------------------- Data load --------------------------
     #train dataset
     train_dataset = SpectrogramDataset(audio_conf, 
-                                       "/home/jhjeong/jiho_deep/Parrotron/wowwow.csv",
+                                       "/home/jhjeong/jiho_deep/Parrotron/label,csv/train.csv",
                                        feature_type=config.audio_data.type, 
                                        normalize=True, 
                                        spec_augment=True)
@@ -289,12 +284,12 @@ def main():
     train_loader = AudioDataLoader(dataset=train_dataset,
                                     shuffle=True,
                                     num_workers=config.data.num_workers,
-                                    batch_size=8,
+                                    batch_size=48,
                                     drop_last=True)
     
     #val dataset
     val_dataset = SpectrogramDataset(audio_conf, 
-                                     "/home/jhjeong/jiho_deep/Parrotron/wowwow1.csv", 
+                                     "/home/jhjeong/jiho_deep/Parrotron/label,csv/test.csv", 
                                      feature_type=config.audio_data.type,
                                      normalize=True,
                                      spec_augment=False)
@@ -302,7 +297,7 @@ def main():
     val_loader = AudioDataLoader(dataset=val_dataset,
                                  shuffle=True,
                                  num_workers=config.data.num_workers,
-                                 batch_size=8,
+                                 batch_size=48,
                                  drop_last=True)
     
     print(" ")
@@ -312,6 +307,7 @@ def main():
     pre_test_cer = 100000
     pre_test_loss = 100000
     for epoch in range(config.training.begin_epoch, config.training.end_epoch):
+        
         print('{} 학습 시작'.format(datetime.datetime.now()))
         train_time = time.time()
         train_asr_loss, train_spec_loss, train_wer = train(model, train_loader, optimizer, spec_criterion, asr_criterion, device)

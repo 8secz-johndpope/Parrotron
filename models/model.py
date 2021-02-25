@@ -45,31 +45,4 @@ class Parrotron(nn.Module):
         return mel_outputs_postnet, txt_outputs
 
 
-if __name__ == '__main__':
-
-    rnn_hidden_size = 256
-    
-    n_layers = 2
-    
-    dropout = 0
-    
-    enc = Encoder(rnn_hidden_size, n_layers, dropout, True)
-
-    dec = Decoder(512, 256, 0)
-    
-    model = Parrotron(enc, dec)
-    
-    aaa = Variable(torch.randn(1, 16, 80))
-    bbb = Variable(torch.randn(1, 20, 80))
-    
-    answer = Variable(torch.randn(1, 20, 80))
-
-    loss = nn.MSELoss()
-
-    context = model(aaa, bbb)
-
-    output = loss(context, answer)
-
-    print(output)
-
     
