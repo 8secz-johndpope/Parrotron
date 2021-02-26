@@ -13,13 +13,6 @@ class Parrotron(nn.Module):
         self.spectrogram_decoder = spectrogram_decoder
         self.asr_decoder = asr_decoder
 
-    def flatten_parameters(self):
-        self.encoder.lstm_1.flatten_parameters()
-        self.encoder.lstm_2.flatten_parameters()
-        self.encoder.lstm_3.flatten_parameters()
-
-        self.spectrogram_decoder.attention_rnn.flatten_parameters()
-
     def forward(self, inputs, tts_inputs, targets):
         
         txt_outputs = None

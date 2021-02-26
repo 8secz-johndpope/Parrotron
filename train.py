@@ -166,7 +166,7 @@ def evaluation(model, val_loader, spec_criterion, asr_criterion, device):
             targets = targets.to(device)
             tts_seqs = tts_seqs.to(device)
 
-            model.module.flatten_parameters()
+            
             mel_outputs_postnet, txt_outputs = model(seqs, tts_seqs, targets)
  
             #loss_1 = asr_criterion(txt_outputs.contiguous().view(-1, txt_outputs.size(-1)), targets.contiguous().view(-1))

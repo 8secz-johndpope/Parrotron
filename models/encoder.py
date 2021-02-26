@@ -76,9 +76,18 @@ class Encoder(nn.Module):
         self.batchnorm_3 = nn.BatchNorm1d(rnn_hidden_size * 2)
 
     def forward(self, x):
-        '''
-        x =  (B, S_L, S_dim)
-        '''
+        """ 
+        Encoder forward pass
+        PARAMS
+        ------
+        x: input (B, T, e_F)
+        
+        RETURNS(보류)
+        -------
+        mel_outputs: mel outputs from the decoder
+        gate_outputs: gate outputs from the decoder
+        alignments: sequence of attention weights from the decoder
+        """
         x = x.transpose(1, 2) # ->[batch, feature, seq_len] 
         x = x.unsqueeze(1)
     
@@ -119,24 +128,3 @@ class Encoder(nn.Module):
         output = x.transpose(1, 2).contiguous() # [batch, seq_len, feature] 
 
         return output
-
-
-if __name__ == '__main__':
-    
-    # enc test 
-    rnn_hidden_size = 256
-    
-    n_layers = 5
-    
-    dropout = 0
-    
-    aaa = Encoder(rnn_hidden_size=256,
-                      n_layers=5, 
-                      dropout=0.3, 
-                      bidirectional=True).cuda()
-    
-    wow = Variable(torch.randn(4, 200, 80)).cuda()
-
-    a = aaa(wow)
-    
-    print(a.shape)

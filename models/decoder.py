@@ -169,27 +169,35 @@ class Decoder(nn.Module):
             pass
 
         else:
-            batch_size, max_len, _ = decoder_inputs.size()
+            batch_size, max_len, decoder_dim = decoder_inputs.size()
+            _, encoder_max_len, _ = encoder_inputs.size()
             
-            go_frame = torch.zeros(decoder_inputs.shape[0], 1, decoder_inputs.shape[2])
-                
-            if encoder_inputs.is_cuda: go_frame = go_frame.cuda()
+            go_frame = torch.zeros(batch_size, 1, decoder_dim)
+            
+            self.attention_hidden = torch.zeros(batch_size, self.rnn_hidden_size) # (n_layer, bathch sise, hidden_size)
+            self.attention_cell = torch.zeros(batch_size, self.rnn_hidden_size)
 
-            mel_outputs, gate_outputs, alignments = [], [], []
+            self.decoder_hidden = torch.zeros(batch_size, self.rnn_hidden_size)
+            self.decoder_cell = torch.zeros(batch_size, self.rnn_hidden_size)
 
-            decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
-            
-            attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
-            if encoder_inputs.is_cuda: attention_context = attention_context.cuda()
-            
+            self.attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
+
+            self.attention_weights_cum = torch.zeros(batch_size, encoder_max_len)
+            self.attention_weights = torch.zeros(batch_size, encoder_max_len)
+
+            mel_outputs, alignments = [], []
+
+            self.memory = self.memory_layer(encoder_inputs)
+
             decoder_input = go_frame
+
             while len(mel_outputs) < max_len - 1:
                 decoder_input = self.pre_net(decoder_input) # B, T, F (prenet output) 
-                decoder_input = decoder_input.squeeze(0)
                 
-                mel_output, attention_context = self.forward_step(encoder_inputs, decoder_input, attention_context)                
-                decoder_input = mel_output
+                decoder_input = decoder_input.squeeze(1)
+                mel_output, attention_weights = self.forward_step(encoder_inputs, decoder_input)
 
+                decoder_input = mel_output
                 mel_outputs += [mel_output.squeeze(1)]
 
         mel_outputs = torch.stack(mel_outputs).transpose(0, 1).contiguous()

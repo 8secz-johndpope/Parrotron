@@ -53,13 +53,13 @@ class ConvLSTMCell(nn.Module):
         return h_next, c_next
 
     def init_hidden(self, b, h, w):
-        '''
+        
         return (torch.zeros(b, self.hidden_dim, h, w),
                 torch.zeros(b, self.hidden_dim, h, w))
         '''
         return (torch.zeros(b, self.hidden_dim, h, w).cuda(),
                 torch.zeros(b, self.hidden_dim, h, w).cuda())
-        
+        '''
 
 class ConvLSTM(nn.Module):
 

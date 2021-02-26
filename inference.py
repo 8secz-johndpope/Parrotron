@@ -113,7 +113,8 @@ def inference(model, val_loader, device):
             tts_seqs = tts_seqs.to(device)
             
             mel_outputs_postnet, _ = model.inference(seqs, tts_seqs, targets)
-            
+            #mel_outputs_postnet, _ = model(seqs, tts_seqs, targets)
+
             spec = mel_outputs_postnet.squeeze().transpose(0,1).numpy()
             
             path = './test_wav'
@@ -174,7 +175,7 @@ def main():
                   postnet_hidden_size=512, 
                   n_layers=2, 
                   dropout=0.5, 
-                  attention_type="DotProduct")
+                  attention_type="LocationSensitive")
     
     asr_dec = ASR_Decoder(label_dim=31, 
                           Embedding_dim=64,
@@ -191,7 +192,7 @@ def main():
     
     #val dataset
     val_dataset = SpectrogramDataset(audio_conf, 
-                                     "/home/jhjeong/jiho_deep/Parrotron/wowwow.csv", 
+                                     "/home/jhjeong/jiho_deep/Parrotron/label,csv/toy_test.csv", 
                                      feature_type=config.audio_data.type,
                                      normalize=True,
                                      spec_augment=False)
@@ -203,7 +204,7 @@ def main():
                                  drop_last=True)
     
     print(" ")
-    print("parrotron 를 학습합니다.")
+    print("Inferrence 합니다.")
     print(" ")
 
     print('{} 평가 시작'.format(datetime.datetime.now()))
