@@ -5,7 +5,7 @@ from models.ConvLSTM import ConvBLSTM
 
 #convolution rnn은 추후에 추가할 예정
 class Encoder(nn.Module):
-    def __init__(self, rnn_hidden_size, n_layers, dropout, bidirectional):
+    def __init__(self, rnn_hidden_size, dropout, bidirectional):
         super(Encoder, self).__init__()
 
         self.conv = nn.Sequential(
@@ -80,13 +80,11 @@ class Encoder(nn.Module):
         Encoder forward pass
         PARAMS
         ------
-        x: input (B, T, e_F)
+        x: input (B, encoder_T, dim)
         
-        RETURNS(보류)
+        RETURNS
         -------
-        mel_outputs: mel outputs from the decoder
-        gate_outputs: gate outputs from the decoder
-        alignments: sequence of attention weights from the decoder
+        outputs: encoder outputs (B, decoder_T, rnn_hidden_size * 2)
         """
         x = x.transpose(1, 2) # ->[batch, feature, seq_len] 
         x = x.unsqueeze(1)

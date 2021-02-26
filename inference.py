@@ -105,7 +105,9 @@ def inference(model, val_loader, device):
     total_batch_num = len(val_loader)
     with torch.no_grad():
         for i, data in enumerate(val_loader):
-            
+            if i % 10 == 0:
+                print(i)
+                
             seqs, targets, tts_seqs, seq_lengths, target_lengths, tts_seq_lengths = data
             
             seqs = seqs.to(device) # (batch_size, time, freq)
@@ -162,20 +164,20 @@ def main():
     #wow = torchaudio.transforms.GriffinLim(n_fft=2048, win_length=WINDOW_SIZE, hop_length=hop_length)
 
     #-------------------------- Model Initialize --------------------------
-    #Prediction Network
     enc = Encoder(rnn_hidden_size=256,
-                  n_layers=5, 
                   dropout=0.5, 
                   bidirectional=True)
 
     dec = Decoder(target_dim=1025,
                   pre_net_dim=256,
-                  rnn_hidden_size=512, 
-                  second_rnn_hidden_size=1024, 
-                  postnet_hidden_size=512, 
-                  n_layers=2, 
-                  dropout=0.5, 
-                  attention_type="LocationSensitive")
+                  rnn_hidden_size=1024,
+                  encoder_dim=256*2,
+                  attention_dim=128,
+                  attention_filter_n=32,
+                  attention_filter_len=31,  
+                  postnet_hidden_size=512,
+                  postnet_filter=5,
+                  dropout=0.5)
     
     asr_dec = ASR_Decoder(label_dim=31, 
                           Embedding_dim=64,
@@ -188,9 +190,9 @@ def main():
     
     model = Parrotron(enc, dec, asr_dec).to(device)
 
-    model.load_state_dict(torch.load("/home/jhjeong/jiho_deep/Parrotron/plz_load/best_parrotron.pth"))
+    #model.load_state_dict(torch.load("/home/jhjeong/jiho_deep/Parrotron/plz_load/best_parrotron.pth"))
     
-    #val dataset
+    #inference dataset
     val_dataset = SpectrogramDataset(audio_conf, 
                                      "/home/jhjeong/jiho_deep/Parrotron/label,csv/toy_test.csv", 
                                      feature_type=config.audio_data.type,

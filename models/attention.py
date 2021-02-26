@@ -70,8 +70,7 @@ class LocationSensitiveAttention(nn.Module):
         
         self.score_mask_value = -float("inf")
 
-    def get_alignment_energies(self, query, processed_memory,
-                               attention_weights_cat):
+    def get_alignment_energies(self, query, processed_memory, attention_weights_cat):
         """
         PARAMS
         ------

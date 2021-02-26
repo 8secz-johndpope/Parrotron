@@ -232,20 +232,20 @@ def main():
     hop_length = int(round(SAMPLE_RATE * 0.001 * WINDOW_STRIDE))
 
     #-------------------------- Model Initialize --------------------------
-    #Prediction Network
     enc = Encoder(rnn_hidden_size=256,
-                  n_layers=5, 
                   dropout=0.5, 
                   bidirectional=True)
 
     dec = Decoder(target_dim=1025,
                   pre_net_dim=256,
-                  rnn_hidden_size=512, 
-                  second_rnn_hidden_size=1024, 
-                  postnet_hidden_size=512, 
-                  n_layers=2, 
-                  dropout=0.5, 
-                  attention_type="LocationSensitive")
+                  rnn_hidden_size=1024,
+                  encoder_dim=256*2,
+                  attention_dim=128,
+                  attention_filter_n=32,
+                  attention_filter_len=31,  
+                  postnet_hidden_size=512,
+                  postnet_filter=5,
+                  dropout=0.5)
     
     asr_dec = ASR_Decoder(label_dim=31, 
                           Embedding_dim=64,

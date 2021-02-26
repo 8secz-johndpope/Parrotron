@@ -9,12 +9,10 @@ https://github.com/SreenivasVRao/ConvGRU-ConvLSTM-PyTorch/blob/master/convlstm.p
 import torch.nn as nn
 import torch
 
-
 class ConvLSTMCell(nn.Module):
     """
     Basic CLSTM cell.
     """
-
     def __init__(self, in_channels, hidden_channels, kernel_size, bias):
 
         super(ConvLSTMCell, self).__init__()
@@ -33,11 +31,8 @@ class ConvLSTMCell(nn.Module):
                               bias=self.bias)
 
     def forward(self, input_tensor, cur_state):
-        
         h_cur, c_cur = cur_state
         
-        #if input_tensor.is_cuda: h_cur = h_cur.cuda()
-       
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
         
         combined_conv = self.conv(combined)
@@ -53,13 +48,13 @@ class ConvLSTMCell(nn.Module):
         return h_next, c_next
 
     def init_hidden(self, b, h, w):
-        
+        '''
         return (torch.zeros(b, self.hidden_dim, h, w),
                 torch.zeros(b, self.hidden_dim, h, w))
-        '''
+        '''    
         return (torch.zeros(b, self.hidden_dim, h, w).cuda(),
                 torch.zeros(b, self.hidden_dim, h, w).cuda())
-        '''
+        
 
 class ConvLSTM(nn.Module):
 

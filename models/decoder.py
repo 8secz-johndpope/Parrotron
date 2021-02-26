@@ -27,40 +27,21 @@ class Prenet(nn.Module):
         return output
 
 class Decoder(nn.Module):
-    def __init__(self, target_dim, pre_net_dim, rnn_hidden_size, second_rnn_hidden_size, postnet_hidden_size, n_layers, dropout, attention_type):
+    def __init__(self, target_dim, pre_net_dim, rnn_hidden_size, encoder_dim, attention_dim, attention_filter_n, attention_filter_len, postnet_hidden_size, postnet_filter, dropout):
         super(Decoder, self).__init__()
 
-        self.pre_net = Prenet(target_dim, pre_net_dim, dropout)
-
-        if attention_type == "DotProduct":
-            self.attention_layer = DotProductAttention()
-
-        elif attention_type == "LocationSensitive":
-            self.attention_layer = LocationSensitiveAttention(512, 512, 128, 32, 31)
-        
-        else:
-            print("no attention")
-
         self.rnn_hidden_size = rnn_hidden_size
+        self.encoder_dim = encoder_dim
+        self.attention_dim = attention_dim
 
-        self.projection_layer = nn.Linear(rnn_hidden_size*2, target_dim, False)
+        self.pre_net = Prenet(target_dim, pre_net_dim, dropout)
+        self.attention_rnn = nn.LSTMCell(pre_net_dim+self.encoder_dim, rnn_hidden_size)
+        self.attention_layer = LocationSensitiveAttention(self.rnn_hidden_size, self.encoder_dim, self.attention_dim, attention_filter_n, attention_filter_len)
+        self.decoder_rnn = nn.LSTMCell(self.encoder_dim + self.rnn_hidden_size, rnn_hidden_size)
+        self.memory_layer = nn.Linear(in_features=self.encoder_dim, out_features=self.attention_dim, bias=True)
+        self.projection_layer = nn.Linear(self.rnn_hidden_size + self.encoder_dim , target_dim, False)
+        self.postnet = Postnet(target_dim, postnet_hidden_size, dropout, int((postnet_filter - 1) / 2)) # 5 = kernel size
         
-        self.attention_rnn = nn.LSTMCell(pre_net_dim+rnn_hidden_size,rnn_hidden_size)
-        
-        self.decoder_rnn = nn.LSTMCell(1024,rnn_hidden_size)
-
-
-        self.rnn_projection = nn.Sequential(
-            nn.Linear(in_features=rnn_hidden_size, out_features=rnn_hidden_size, bias=True),
-            nn.ReLU()
-        )
-
-        self.memory_layer = nn.Linear(in_features=512, out_features=128, bias=True)
-
-        self.postnet = Postnet(target_dim, postnet_hidden_size, dropout, int((5 - 1) / 2)) # 5 = kernel size
-
-        self.attention_type = attention_type
-
     def forward_step(self, encoder_inputs, decoder_input):
         """
         PARAMS
@@ -82,19 +63,15 @@ class Decoder(nn.Module):
             (self.attention_weights.unsqueeze(1),
              self.attention_weights_cum.unsqueeze(1)), dim=1)
 
-        if self.attention_type == "DotProduct":
-            attention_context, attn = self.attention_layer(self.attention_hidden, encoder_inputs, encoder_inputs) 
+        self.attention_context, self.attention_weights = self.attention_layer(self.attention_hidden, encoder_inputs, self.memory, attention_weights_cat)
+        self.attention_weights_cum += self.attention_weights
+        decoder_input = torch.cat((self.attention_hidden, self.attention_context), -1)
 
-        elif self.attention_type == "LocationSensitive":
-            self.attention_context, self.attention_weights = self.attention_layer(self.attention_hidden, encoder_inputs, self.memory, attention_weights_cat)
-            self.attention_weights_cum += self.attention_weights
-            decoder_input = torch.cat((self.attention_hidden, self.attention_context), -1)
+        self.decoder_hidden, self.decoder_cell = self.decoder_rnn(decoder_input, (self.decoder_hidden, self.decoder_cell))
+        
+        decoder_hidden_attention_context = torch.cat((self.decoder_hidden, self.attention_context), dim=1) # concatenation of the LSTM output and attention context vector
 
-            self.decoder_hidden, self.decoder_cell = self.decoder_rnn(decoder_input, (self.decoder_hidden, self.decoder_cell))
-            decoder_hidden_attention_context = torch.cat((self.decoder_hidden, self.attention_context), dim=1) # concatenation of the LSTM output and attention context vector
-            decoder_output = self.projection_layer(decoder_hidden_attention_context) # projected through a linear transform
-        else:
-            pass
+        decoder_output = self.projection_layer(decoder_hidden_attention_context) # projected through a linear transform
 
         return decoder_output, self.attention_weights
    
@@ -125,7 +102,7 @@ class Decoder(nn.Module):
         self.decoder_hidden = torch.zeros(batch_size, self.rnn_hidden_size)
         self.decoder_cell = torch.zeros(batch_size, self.rnn_hidden_size)
 
-        self.attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
+        self.attention_context = torch.zeros(batch_size, self.encoder_dim)
 
         self.attention_weights_cum = torch.zeros(batch_size, encoder_max_len)
         self.attention_weights = torch.zeros(batch_size, encoder_max_len)
@@ -180,11 +157,11 @@ class Decoder(nn.Module):
             self.decoder_hidden = torch.zeros(batch_size, self.rnn_hidden_size)
             self.decoder_cell = torch.zeros(batch_size, self.rnn_hidden_size)
 
-            self.attention_context = torch.zeros(batch_size, self.rnn_hidden_size)
+            self.attention_context = torch.zeros(batch_size, self.encoder_dim)
 
             self.attention_weights_cum = torch.zeros(batch_size, encoder_max_len)
             self.attention_weights = torch.zeros(batch_size, encoder_max_len)
-
+            
             mel_outputs, alignments = [], []
 
             self.memory = self.memory_layer(encoder_inputs)
