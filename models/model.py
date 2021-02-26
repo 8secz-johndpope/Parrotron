@@ -14,16 +14,13 @@ class Parrotron(nn.Module):
         self.asr_decoder = asr_decoder
 
     def forward(self, inputs, tts_inputs, targets):
-        
-        txt_outputs = None
-
         encoder_outputs = self.encoder(inputs)
 
-        mel_outputs_postnet = self.spectrogram_decoder(encoder_outputs, tts_inputs)
+        mel_outputs_postnet, mel_outputs = self.spectrogram_decoder(encoder_outputs, tts_inputs)
         
-        #txt_outputs = self.asr_decoder(encoder_outputs, targets)
+        txt_outputs = self.asr_decoder(encoder_outputs, targets)
 
-        return mel_outputs_postnet, txt_outputs
+        return mel_outputs_postnet, mel_outputs, txt_outputs
 
     def inference(self, inputs, tts_inputs, targets):
         

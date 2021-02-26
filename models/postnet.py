@@ -43,23 +43,18 @@ class Postnet(nn.Module):
             self.conv,
             nn.BatchNorm1d(filter_num),
             nn.Tanh(),
-            nn.Dropout(dropout),
             self.conv_1,
             nn.BatchNorm1d(filter_num),
             nn.Tanh(),
-            nn.Dropout(dropout),
             self.conv_2,
             nn.BatchNorm1d(filter_num),
             nn.Tanh(),
-            nn.Dropout(dropout),
             self.conv_3,
             nn.BatchNorm1d(filter_num),
             nn.Tanh(),
-            nn.Dropout(dropout),
             self.conv_4,
             nn.BatchNorm1d(target_dim),
             nn.Tanh(),
-            nn.Dropout(dropout),
         )
 
     def forward(self, x):

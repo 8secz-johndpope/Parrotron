@@ -6,26 +6,6 @@ from torch.autograd import Variable
 from torch.nn import functional as F
 import random
 
-class LocationLayer(nn.Module):
-    def __init__(self, attention_n_filters, attention_kernel_size,
-                 attention_dim):
-        super(LocationLayer, self).__init__()
-        padding = int((attention_kernel_size - 1) / 2)
-        
-        self.location_conv = nn.Conv1d(2, attention_n_filters,
-                                    kernel_size=attention_kernel_size, stride=1,
-                                    padding=padding, dilation=1,
-                                    bias=False)
-        
-        self.location_dense = nn.Linear(attention_n_filters, attention_dim, bias=False)
-
-    def forward(self, attention_weights_cat):
-        processed_attention = self.location_conv(attention_weights_cat)
-        processed_attention = processed_attention.transpose(1, 2)
-        processed_attention = self.location_dense(processed_attention)
-
-        return processed_attention
-
 class DotProductAttention(nn.Module):
     """
     Dot-Product Attention
@@ -45,6 +25,25 @@ class DotProductAttention(nn.Module):
 
         return context, attn
 
+class LocationLayer(nn.Module):
+    def __init__(self, attention_n_filters, attention_kernel_size,
+                 attention_dim):
+        super(LocationLayer, self).__init__()
+        padding = int((attention_kernel_size - 1) / 2)
+        
+        self.location_conv = nn.Conv1d(2, attention_n_filters,
+                                    kernel_size=attention_kernel_size, stride=1,
+                                    padding=padding, dilation=1,
+                                    bias=False)
+        
+        self.location_dense = nn.Linear(attention_n_filters, attention_dim, bias=False)
+
+    def forward(self, attention_weights_cat):
+        processed_attention = self.location_conv(attention_weights_cat)
+        processed_attention = processed_attention.transpose(1, 2)
+        processed_attention = self.location_dense(processed_attention)
+
+        return processed_attention
 
 class LocationSensitiveAttention(nn.Module):
     """

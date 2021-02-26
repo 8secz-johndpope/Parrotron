@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.nn import functional as F
 import random
-from models.attention import DotProductAttention, LocationSensitiveAttention
+from models.attention import LocationSensitiveAttention
 from models.postnet import Postnet
 
 class Prenet(nn.Module):
@@ -139,7 +139,7 @@ class Decoder(nn.Module):
         mel_outputs_postnet = self.postnet(mel_outputs)
         final_mel_outputs = mel_outputs + mel_outputs_postnet.transpose(1, 2)
         
-        return final_mel_outputs
+        return final_mel_outputs, mel_outputs
 
     def inference(self, encoder_inputs, decoder_inputs):
         if decoder_inputs == None:
@@ -161,7 +161,7 @@ class Decoder(nn.Module):
 
             self.attention_weights_cum = torch.zeros(batch_size, encoder_max_len)
             self.attention_weights = torch.zeros(batch_size, encoder_max_len)
-            
+
             mel_outputs, alignments = [], []
 
             self.memory = self.memory_layer(encoder_inputs)

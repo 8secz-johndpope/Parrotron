@@ -154,17 +154,23 @@ class SpectrogramDataset(Dataset, SpectrogramParser):
         return spect, transcript, tts_spect
 
     def parse_transcript(self, transcript_path):
+        """
+        RETURNS
+        -------
+        transcript_list: list [..., eos token] sos token은 없음
+        """
+        
         with open(transcript_path, 'r', encoding='utf8') as f:
             
             transcript_list = []
             transcript = f.read()
             transcript = transcript.strip()
-            
+
             for char in transcript:
                 transcript_list.append(char2index[char])
             
             transcript_list.append(EOS_token)           
-            
+        
         return transcript_list
 
     def __len__(self):
