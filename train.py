@@ -257,7 +257,7 @@ def main():
     train_loader = AudioDataLoader(dataset=train_dataset,
                                     shuffle=True,
                                     num_workers=config.data.num_workers,
-                                    batch_size=40,
+                                    batch_size=32,
                                     drop_last=True)
     
     #val dataset
@@ -270,7 +270,7 @@ def main():
     val_loader = AudioDataLoader(dataset=val_dataset,
                                  shuffle=True,
                                  num_workers=config.data.num_workers,
-                                 batch_size=40,
+                                 batch_size=32,
                                  drop_last=True)
     
     print(" ")

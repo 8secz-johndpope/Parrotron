@@ -75,7 +75,7 @@ class Decoder(nn.Module):
 
         return decoder_output, self.attention_weights
    
-    def forward(self, encoder_inputs, decoder_inputs):
+    def forward(self, encoder_inputs, decoder_inputs, tf):
         """ 
         Decoder forward pass for training
         PARAMS
@@ -89,6 +89,8 @@ class Decoder(nn.Module):
         gate_outputs: gate outputs from the decoder
         alignments: sequence of attention weights from the decoder
         """
+        use_teacher_forcing = True if random.random() < tf else False
+        
         #init part
         batch_size, max_len, decoder_dim = decoder_inputs.size()
         _, encoder_max_len, _ = encoder_inputs.size()
@@ -108,7 +110,7 @@ class Decoder(nn.Module):
         self.attention_weights = torch.zeros(batch_size, encoder_max_len)
 
         self.memory = self.memory_layer(encoder_inputs)
-
+        
         if encoder_inputs.is_cuda:
             self.attention_context = self.attention_context.cuda()
             self.attention_cell = self.attention_cell.cuda()
@@ -120,25 +122,36 @@ class Decoder(nn.Module):
             self.attention_weights_cum = self.attention_weights_cum.cuda()
             self.attention_weights = self.attention_weights.cuda()
 
-        # teacher forcing pre_net
-        decoder_inputs = torch.cat((go_frame, decoder_inputs), dim=1)
-        decoder_inputs = self.pre_net(decoder_inputs) # B, T, F (prenet output)
-        decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
-
         mel_outputs, alignments = [], []
-        
-        while len(mel_outputs) < decoder_inputs.size(0) - 1:
-            decoder_input = decoder_inputs[len(mel_outputs)]
-            mel_output, attention_weights = self.forward_step(encoder_inputs, decoder_input)
-            
-            mel_outputs += [mel_output.squeeze(1)]
-            alignments += [attention_weights]
+        if use_teacher_forcing:       
+            # teacher forcing pre_net
+            decoder_inputs = torch.cat((go_frame, decoder_inputs), dim=1)
+            decoder_inputs = self.pre_net(decoder_inputs) # B, T, F (prenet output)
+            decoder_inputs = decoder_inputs.transpose(0, 1).contiguous() # T, B, F
+ 
+            while len(mel_outputs) < decoder_inputs.size(0) - 1:
+                decoder_input = decoder_inputs[len(mel_outputs)]               
+                mel_output, attention_weights = self.forward_step(encoder_inputs, decoder_input)
+                
+                mel_outputs += [mel_output.squeeze(1)]
+                alignments += [attention_weights]
+
+        else:
+            decoder_input = go_frame
+
+            while len(mel_outputs) < max_len:
+                decoder_input = self.pre_net(decoder_input) # B, T, F (prenet output) 
+                
+                decoder_input = decoder_input.squeeze(1)
+                mel_output, attention_weights = self.forward_step(encoder_inputs, decoder_input)
+                
+                decoder_input = mel_output
+                mel_outputs += [mel_output.squeeze(1)]
 
         mel_outputs = torch.stack(mel_outputs).transpose(0, 1).contiguous()
-
         mel_outputs_postnet = self.postnet(mel_outputs)
         final_mel_outputs = mel_outputs + mel_outputs_postnet.transpose(1, 2)
-        
+
         return final_mel_outputs, mel_outputs
 
     def inference(self, encoder_inputs, decoder_inputs):

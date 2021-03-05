@@ -3,13 +3,29 @@ import os
 import wave
 import librosa
 import soundfile as sf
+import wave
 
-txt_list = glob('/home/jhjeong/Librispeech_data/train/txt/*.txt')
 
-wav_path = "/home/jhjeong/Librispeech_data/train/wav/"
-txt_path_1 = "/home/jhjeong/Librispeech_data/train/txt/"
-tts_path = "/home/jhjeong/Librispeech_data/train/TTS_wav/"
+def get_duration(audio_path):
+    audio = wave.open(audio_path)
+    frames = audio.getnframes()
+    rate = audio.getframerate()
+    duration = frames / float(rate)
+    return duration
 
+
+with open("/home/jhjeong/jiho_deep/Parrotron/label,csv/toy_test.csv", "r") as f:
+    lines = f.readlines()
+
+for line in lines:
+    name = line.split(",")[0]
+    time = get_duration(name)
+    print(time)
+    if time > 5:
+        print(time)
+        print(line)
+
+'''
 
 with open("train.csv", "w") as f:
     f.write("")
@@ -28,4 +44,4 @@ for txt_path in txt_list:
         f.write(",")
         f.write(final_tts_path)
         f.write("\n")
-    
+'''

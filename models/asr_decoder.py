@@ -21,14 +21,12 @@ class ASR_Decoder(nn.Module):
         self.pad_id = pad_id
         
         self.embedding = nn.Embedding(self.label_dim, self.embedding_dim)
-
         self.attention_rnn = nn.LSTMCell(self.embedding_dim + self.rnn_hidden_size, self.rnn_hidden_size)
         self.attention_layer = LocationSensitiveAttention(self.rnn_hidden_size, self.encoder_dim, self.attention_dim, attention_filter_n, attention_filter_len)
         self.decoder_rnn = nn.LSTMCell(self.rnn_hidden_size, self.second_rnn_hidden_size)
 
         self.memory_layer = nn.Linear(in_features=self.encoder_dim, out_features=self.attention_dim, bias=True)
         self.projection_layer = nn.Linear(self.second_rnn_hidden_size, self.label_dim, False)
-
 
     def forward_step(self, encoder_inputs, decoder_input):
         
